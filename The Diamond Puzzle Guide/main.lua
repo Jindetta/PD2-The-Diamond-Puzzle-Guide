@@ -1,6 +1,6 @@
 if Global.level_data and Global.level_data.level_id == "mus" then
     if not TDPGMod then
-        TDPGMod = {_brush = Draw:brush(), _sync_data = {}}
+        TDPGMod = {_brush = Draw:brush(), drawn_tiles = {}, tile_data = {}}
         local hook_name = Network:is_server() and "on_executed" or "client_on_executed"
 
         function TDPGMod:init(hook)
@@ -8,33 +8,28 @@ if Global.level_data and Global.level_data.level_id == "mus" then
                 Hooks:PostHook(CoreWorldInstanceManager, "add_instance_data", "TDPG_AddInstanceData", function(manager, instance)
                     if instance.name:match("^mus_tile_[a-i]00[1-6]$") then
                         local base_index = instance.start_index + manager:start_offset_index()
-                        self.tile_data[instance.name] = base_index + 100001
+                        self.tile_data[base_index + 100005] = base_index + 100001
                     end
                 end)
             elseif hook == "lib/managers/missionmanager" then
-                function TDPGMod:add_drawable(instance)
-                    if type(self.drawn_tiles) == "table" then
-                        local instance_id = self.tile_data[instance]
-                        local element = managers.mission:get_element_by_id(instance_id)
+                function TDPGMod:add_drawable(element)
+                    if type(self.drawn_tiles) == "table" and type(element) == "table" then
+                        local shape = element._shapes[1]
 
-                        if type(element) == "table" then
-                            local shape = element._shapes[1]
+                        if type(shape) == "table" then
+                            local rot = shape:rotation()
 
-                            if type(shape) == "table" then
-                                local rot = shape:rotation()
-
-                                table.insert(self.drawn_tiles, {
-                                    pos = shape:position() - rot:z() * (shape._properties.height - 20) / 2,
-                                    width = rot:x() * shape._properties.width / 2,
-                                    depth = rot:y() * shape._properties.depth / 2,
-                                    height = Vector3(0, 0, 0.3)
-                                })
-                            end
+                            table.insert(self.drawn_tiles, {
+                                pos = shape:position() - rot:z() * (shape._properties.height - 20) / 2,
+                                width = rot:x() * shape._properties.width / 2,
+                                depth = rot:y() * shape._properties.depth / 2,
+                                height = Vector3(0, 0, 0.3)
+                            })
                         end
                     end
                 end
 
-                Hooks:PostHook(MissionScriptElement, "init", "TDPG_InitTiles", function(element, _, data)
+                Hooks:PostHook(MissionScriptElement, "init", "TDPG_InitTiles", function(element, script, data)
                     if data.id == 101517 or data.id == 101784 then
                         Hooks:PostHook(element, hook_name, "TDPG_ClearTiles", function()
                             if data.id == 101784 then
@@ -46,9 +41,9 @@ if Global.level_data and Global.level_data.level_id == "mus" then
 
                             self.drawn_tiles = {}
                         end)
-                    elseif data.editor_name:match("^seq_[a-i]00[1-6]$") then
+                    elseif type(self.tile_data[data.id]) == "number" then
                         Hooks:PostHook(element, hook_name, "TDPG_HighlightTile", function()
-                            self:add_drawable(data.editor_name:gsub("^seq_", "mus_tile_"))
+                            self:add_drawable(script:element(self.tile_data[data.id]))
                         end)
                     end
                 end)
@@ -70,7 +65,7 @@ if Global.level_data and Global.level_data.level_id == "mus" then
                                 elseif gui._timer <= 30 then
                                     self._brush:set_color(Color(0.03, 1 - (gui._timer - 15) / 30 ^ 0.3, 1, 0))
                                 else
-                                    self._brush:set_color(Color(0.03, 1, 0, 0))
+                                    self._brush:set_color(Color(0.03, 0, 1, 0))
                                 end
                             end
                         end)
@@ -80,9 +75,6 @@ if Global.level_data and Global.level_data.level_id == "mus" then
                 end)
             end
         end
-
-        TDPGMod.drawn_tiles = {}
-        TDPGMod.tile_data = {}
     end
 
     TDPGMod:init(RequiredScript)
