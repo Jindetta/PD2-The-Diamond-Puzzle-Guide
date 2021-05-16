@@ -23,7 +23,7 @@
         {
             "identifier" : "TDPGMod-by-Jindetta",
             "host" : {
-                "meta" : ""
+                "meta" : "https://raw.githubusercontent.com/Jindetta/PD2-The-Diamond-Puzzle-Guide/master/meta.json"
             }
         }
     ]
